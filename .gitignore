@@ -41,3 +41,6 @@ nosetests.xml
 .aux
 .toc
 .tex~
+
+# backup files
+*~
