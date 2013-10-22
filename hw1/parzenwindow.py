@@ -27,6 +27,11 @@ def parzen_predict(num_class, x_train, y_train, x_test, h):
     for i in range(train_count):
         class_index = int(y_train[i])
         data[class_index].append(x_train[i])
+        
+    prior = [0] * num_class
+    total = len(x_train)
+    for i in range(num_class):
+        prior[i] = len(data[i]) *1.0 / total
     
     maxp = 0
     prediction = -1
@@ -39,7 +44,7 @@ def parzen_predict(num_class, x_train, y_train, x_test, h):
                 tmp = - sum((data[i][j] - x)**2) * 1.0 / (2*(h**2))
                 tmp = math.exp(tmp)
                 p += tmp
-            p = p / Ni
+            p = p / Ni * prior[i]
             
             if p > maxp:
                 maxp = p
