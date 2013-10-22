@@ -29,7 +29,7 @@ def build_LDF_model(num_class, x_train, y_train):
         
     inverse_cov = avg_cov.getI() # get the inverse covariance matrix
     
-    num_feather = x_train.shape[1]
+    num_feature = x_train.shape[1]
     # each column for weight[i]
     weight = np.matrix([0] * num_feature).T
     w0 = []
@@ -57,9 +57,8 @@ def LDF_predict(x_test, num_class, inverse_cov, weight, w0):
         predicted_labels.append(prediction)
         
     return predicted_labels
-
-if __name__ == "__main__":
-    dataset_name = sys.argv[1]
+    
+def main(dataset_name):
     num_class, num_feature, x_train, y_train, x_test, y_test = readdata.read_dataset(dataset_name)
     
     inverse_cov, weight, w0 = build_LDF_model(num_class, x_train, y_train)
@@ -67,3 +66,7 @@ if __name__ == "__main__":
     y_pred = LDF_predict(x_test, num_class, inverse_cov, weight, w0)
     #pdb.set_trace()
     print sklearn.metrics.classification_report(y_test, y_pred)
+
+if __name__ == "__main__":
+    dataset_name = sys.argv[1]
+    main(dataset_name)    

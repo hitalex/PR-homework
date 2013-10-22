@@ -17,12 +17,13 @@ import sklearn.metrics
 
 import readdata
 from QDF import build_QDF_model
+from cv import prepare_cv_dataset
 
 """
 Note: 
 """
 
-def build_MQDF_model(num_class, x_train, y_train, k, delta):
+def build_MQDF_model(num_class, x_train, y_train, k, delta0):
     """ MQDF model
     @k and @delta are hyper-parameters
     
@@ -54,10 +55,11 @@ def build_MQDF_model(num_class, x_train, y_train, k, delta):
         eigenvalue.append(eig_values[:k])
         
         # delta via ML estimation
-        delta[i] = (cov.trace() - sum(eigenvalue[i])) * 1.0 / (d-k)
+        #delta[i] = (cov.trace() - sum(eigenvalue[i])) * 1.0 / (d-k)
         
         # delta close to $\sigma_{i,k}$ or $\sigma_{i,k+1}$
-        
+    
+    delta = [delta0] * num_class
     return prior, mean, eigenvalue, eigenvector, delta
     
 def MQDF_predict(x_test, num_class, k, mean, eigenvalue, eigenvector, delta):
@@ -80,11 +82,11 @@ def MQDF_predict(x_test, num_class, k, mean, eigenvalue, eigenvector, delta):
             for j in range(k):
                 p += (ma_dis[j] * 1.0 / eigenvalue[i][j])
             
-            p += (dis - sum(ma_dis)) / delta[i]
+            p += ((dis - sum(ma_dis)) / delta[i])
             for j in range(k):
                 p += math.log(eigenvalue[i][j])
                 
-            p += (d-k) * math.log(delta[i])
+            p += ((d-k) * math.log(delta[i]))
             p = -p
                 
             if p > max_posteriori:
@@ -94,16 +96,62 @@ def MQDF_predict(x_test, num_class, k, mean, eigenvalue, eigenvector, delta):
         y_pred.append(prediction)
         
     return y_pred
+    
+def cross_validation(cv_dataset, num_class, k, delta0):
+    """cross validation for beta and gamma based on average precision
+    hyper-parameters: k, delta0
+    """
+    nfold = len(cv_dataset)
+    score = 0.0
+    for (x_train, y_train, x_test, y_test) in cv_dataset:
+        prior, mean, eigenvalue, eigenvector, delta = build_MQDF_model(num_class, x_train, y_train, k, delta0)
+        y_pred = MQDF_predict(x_test, num_class, k, mean, eigenvalue, eigenvector, delta)
+        score += sklearn.metrics.accuracy_score(y_test, y_pred)
+        
+    score /= nfold
+    
+    return score
 
-if __name__ == '__main__':
-    import sys
-    dataset_name = sys.argv[1]
+def main(dataset_name):
     num_class, num_feature, x_train, y_train, x_test, y_test = readdata.read_dataset(dataset_name)
     
-    k = 10
-    delta = 1
-    prior, mean, eigenvalue, eigenvector, delta = build_MQDF_model(num_class, x_train, y_train, k, delta)
+    print 'Number of folds:'
+    nfold = int(input())
+    print 'Preparing cv dataset...'
+    cv_dataset = prepare_cv_dataset(x_train, y_train, nfold)
+    
+    bestk = 0
+    bestdelta0 = 0
+    highest_prec = 0
+    while 1:
+        print 'Input k, delta:'
+        s = raw_input().strip()
+        if s == '':
+            break
+        k, delta0 = s.split()
+        k = int(k)
+        delta0 = float(delta0)
+        
+        avg_precision = cross_validation(cv_dataset, num_class, k, delta0)
+        print 'cross valiation: k=%d, delta=%f, avg precision=%f\n' % (k, delta0, avg_precision)
+        
+        if avg_precision > highest_prec:
+            highest_prec = avg_precision
+            bestk = k
+            bestdelta0 = delta0
+            
+    print 'Best k and delta0: ', bestk, bestdelta0
+    print 'Best avg precision: ', highest_prec
+    
+    k = bestk
+    delta0 = bestdelta0
+    prior, mean, eigenvalue, eigenvector, delta = build_MQDF_model(num_class, x_train, y_train, k, delta0)
 
     y_pred = MQDF_predict(x_test, num_class, k, mean, eigenvalue, eigenvector, delta)
     #pdb.set_trace()
     print sklearn.metrics.classification_report(y_test, y_pred)
+
+if __name__ == '__main__':
+    import sys
+    dataset_name = sys.argv[1]
+    main(dataset_name)

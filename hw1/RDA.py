@@ -25,9 +25,17 @@ def build_RDA_model(num_class, x_train, y_train, beta, gamma):
         
     num_feature = len(x_train[0])
     for i in range(num_class):
+        """
+        # the following formula is from PPT
         tmp = cov_matrix[i]
         dev = tmp.trace()[0,0] * 1.0 / num_feature
         cov_matrix[i] = (1-gamma) * ((1-beta)*tmp + beta*avg_cov) + gamma * dev * np.matlib.eye(num_feature)
+        """
+        # refer to Statistical Pattern Recognition, page 43
+        tmp = cov_matrix[i]
+        tmp = (1-beta) * prior[i] * tmp + beta * avg_cov
+        dev = tmp.trace()[0,0] * 1.0 / num_feature
+        cov_matrix[i] = (1-gamma) * tmp + gamma * dev * np.matlib.eye(num_feature)
         
     return prior, mean, cov_matrix
     
@@ -39,16 +47,14 @@ def cross_validation(cv_dataset, num_class, beta, gamma):
     score = 0.0
     for (x_train, y_train, x_test, y_test) in cv_dataset:
         prior, mean, cov_matrix = build_RDA_model(num_class, x_train, y_train, beta, gamma)
-        y_pred = QDF_predict(x_test, num_class, mean, cov_matrix)
+        y_pred = QDF_predict(x_test, num_class, prior, mean, cov_matrix)
         score += sklearn.metrics.accuracy_score(y_test, y_pred)
         
     score /= nfold
     
     return score
-
-if __name__ == '__main__':
-    import sys
-    dataset_name = sys.argv[1]
+    
+def main(dataset_name):
     num_class, num_feature, x_train, y_train, x_test, y_test = \
         readdata.read_dataset(dataset_name)
         
@@ -84,5 +90,10 @@ if __name__ == '__main__':
     gamma = best[1]
     prior, mean, cov_matrix = build_RDA_model(num_class, x_train, y_train, beta, gamma)
     # predict like QDF
-    y_pred = QDF_predict(x_test, num_class, mean, cov_matrix)
+    y_pred = QDF_predict(x_test, num_class, prior, mean, cov_matrix)
     print sklearn.metrics.classification_report(y_test, y_pred)
+
+if __name__ == '__main__':
+    import sys
+    dataset_name = sys.argv[1]
+    main(dataset_name)

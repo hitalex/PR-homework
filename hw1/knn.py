@@ -75,7 +75,7 @@ if __name__ == '__main__':
             bestk = k
                         
     print 'Best k: ', bestk
-    print 'Best %d-fold avg precision: ', (nfold, highest_prec)
+    print 'Best %d-fold avg precision: %f' % (nfold, highest_prec)
 
     y_pred = knn_predict(num_class, x_train, y_train, x_test, bestk)
     print sklearn.metrics.classification_report(y_test, y_pred)

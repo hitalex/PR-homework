@@ -60,9 +60,12 @@ def cross_validation(cv_dataset, num_class, h):
     """
     nfold = len(cv_dataset)
     score = 0.0
+    print 'Cross validataion process...'
     for (x_train, y_train, x_test, y_test) in cv_dataset:
         y_pred = parzen_predict(num_class, x_train, y_train, x_test, h)
-        score += sklearn.metrics.accuracy_score(y_test, y_pred)
+        tmp = sklearn.metrics.accuracy_score(y_test, y_pred)
+        print '%d fold precision: %f' % (nfold, tmp)
+        score += tmp
         
     score /= nfold
     

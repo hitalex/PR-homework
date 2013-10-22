@@ -39,7 +39,7 @@ def build_QDF_model(num_class, x_train, y_train):
         
     return prior, mean, cov_matrix
     
-def QDF_predict(x_test, num_class, mean, cov_matrix):
+def QDF_predict(x_test, num_class, prior, mean, cov_matrix):
     """ Predict class labels
     Find the class lable that maximize the prob
     """
@@ -57,7 +57,8 @@ def QDF_predict(x_test, num_class, mean, cov_matrix):
         prediction = -1
         for i in range(num_class):
             diff = x - mean[i]
-            p = (-1 * diff.T * inverse_cov[i] * diff)[0,0] - log_det_cov[i]
+            p = 2 * math.log(prior[i]) # we do not ignore priors here
+            p = p - (diff.T * inverse_cov[i] * diff)[0,0] - log_det_cov[i]
             if p > max_posteriori:
                 max_posteriori = p
                 prediction = i
@@ -75,6 +76,6 @@ if __name__ == "__main__":
     prior, mean, cov_matrix = build_QDF_model(num_class, x_train, y_train)
     #print mean
     
-    y_pred = QDF_predict(x_test, num_class, mean, cov_matrix)
+    y_pred = QDF_predict(x_test, num_class, prior, mean, cov_matrix)
     #print predicted_labels
     print sklearn.metrics.classification_report(y_test, y_pred)
