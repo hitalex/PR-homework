@@ -25,7 +25,7 @@ def build_RDA_model(num_class, x_train, y_train, beta, gamma):
         
     num_feature = len(x_train[0])
     for i in range(num_class):
-        """
+        
         # the following formula is from PPT
         tmp = cov_matrix[i]
         dev = tmp.trace()[0,0] * 1.0 / num_feature
@@ -36,6 +36,7 @@ def build_RDA_model(num_class, x_train, y_train, beta, gamma):
         tmp = (1-beta) * prior[i] * tmp + beta * avg_cov
         dev = tmp.trace()[0,0] * 1.0 / num_feature
         cov_matrix[i] = (1-gamma) * tmp + gamma * dev * np.matlib.eye(num_feature)
+        """
         
     return prior, mean, cov_matrix
     
@@ -92,6 +93,8 @@ def main(dataset_name):
     # predict like QDF
     y_pred = QDF_predict(x_test, num_class, prior, mean, cov_matrix)
     print sklearn.metrics.classification_report(y_test, y_pred)
+    
+    print 'Average accuracy: ', sklearn.metrics.accuracy_score(y_test, y_pred)
 
 if __name__ == '__main__':
     import sys

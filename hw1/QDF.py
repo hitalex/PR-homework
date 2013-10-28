@@ -7,12 +7,23 @@ QDF: Quadratic discriminant function
 """
 
 import pdb
+import pprint
 
 import numpy as np
 import math
 import sklearn.metrics
 
 import readdata
+
+def print_cov_matrix(cov_matrix):
+    """ Print each covariance matrix for each class
+    """
+    print 'Covariance matrix for each class:'
+    num_class = len(cov_matrix)
+    for i in range(num_class):
+        print 'Class %d:' % i
+        pprint.pprint(cov_matrix[i])
+        
 
 def build_QDF_model(num_class, x_train, y_train):
     """ Cacualte prior prob., means and covariance matrix for each class
@@ -35,7 +46,7 @@ def build_QDF_model(num_class, x_train, y_train):
         mean.append(data[i].mean(0).T)
         # np.cov treat each row as one feature, so data[i].T has to be transposed
         cov_matrix.append(np.matrix(np.cov(data[i].T)))
-        prior.append(len(data[i] * 1.0 / train_count))
+        prior.append(len(data[i]) * 1.0 / train_count)
         
     return prior, mean, cov_matrix
     
@@ -75,7 +86,10 @@ if __name__ == "__main__":
     
     prior, mean, cov_matrix = build_QDF_model(num_class, x_train, y_train)
     #print mean
+    print_cov_matrix(cov_matrix)
     
     y_pred = QDF_predict(x_test, num_class, prior, mean, cov_matrix)
     #print predicted_labels
     print sklearn.metrics.classification_report(y_test, y_pred)
+    
+    print 'Average accuracy: ', sklearn.metrics.accuracy_score(y_test, y_pred)

@@ -9,6 +9,7 @@ Kernel: Gaussian kernel
 import math
 
 import sklearn.metrics
+import numpy as np
 
 import readdata
 from cv import prepare_cv_dataset
@@ -33,10 +34,10 @@ def parzen_predict(num_class, x_train, y_train, x_test, h):
     for i in range(num_class):
         prior[i] = len(data[i]) *1.0 / total
     
-    maxp = 0
-    prediction = -1
     y_pred = []
     for x in x_test:
+        maxp = 0
+        prediction = -1
         for i in range(num_class):
             Ni = len(data[i]) # number of instances in class i
             p = 0
@@ -44,7 +45,8 @@ def parzen_predict(num_class, x_train, y_train, x_test, h):
                 tmp = - sum((data[i][j] - x)**2) * 1.0 / (2*(h**2))
                 tmp = math.exp(tmp)
                 p += tmp
-            p = p / Ni * prior[i]
+            #p = p / Ni * prior[i]
+            p = p / Ni
             
             if p > maxp:
                 maxp = p
@@ -70,11 +72,48 @@ def cross_validation(cv_dataset, num_class, h):
     score /= nfold
     
     return score
-
+    
+def make_small_dataset(x, y, num):
+    """ Make small dataset out of large dataset
+    x: the data matrix
+    y: the corresponding lables
+    num: the number of instances
+    """
+    y.shape = (len(y), 1)
+    # combine x and y
+    data = np.hstack((x, y))
+    
+    import numpy.random
+    np.random.shuffle(data)
+    
+    if len(data) > num:
+        x = data[:num, :-1]
+        y = data[:num, -1]
+        
+    return x, y
+    
+def accuracy_score(y_true, y_pred):
+    """ Average accuracy score
+    """
+    assert(len(y_true) == len(y_pred))
+    
+    correct = 0
+    for i in range(len(y_true)):
+        if int(y_pred[i]) == int(y_true[i]):
+            correct = correct + 1
+        
+    return correct * 1.0 / len(y_true)
+    
 if __name__ == '__main__':
     import sys
     dataset_name = sys.argv[1]
     num_class, num_feature, x_train, y_train, x_test, y_test = readdata.read_dataset(dataset_name)
+    
+    x_train, y_train = make_small_dataset(x_train, y_train, 500)
+    x_test, y_test = make_small_dataset(x_test, y_test, 200)
+    
+    print 'Number of training data:', len(x_train)
+    print 'Number of test data:', len(x_test)
     
     print 'Number of folds:'
     nfold = int(input())
@@ -102,4 +141,7 @@ if __name__ == '__main__':
     h = best[0]
     y_pred = parzen_predict(num_class, x_train, y_train, x_test, h)
     print sklearn.metrics.classification_report(y_test, y_pred)
+    
+    print 'Average acc: ', sklearn.metrics.accuracy_score(y_test, y_pred)
+    print 'My avg acc: ', accuracy_score(y_test, y_pred)
     

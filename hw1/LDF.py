@@ -15,13 +15,15 @@ import numpy.matlib
 import sklearn.metrics
 
 import readdata
-from QDF import build_QDF_model
+from QDF import build_QDF_model, print_cov_matrix
 
 def build_LDF_model(num_class, x_train, y_train):
     """ LDF model
     First call QDF model to caculate the mean, cov_matirx
     """
     prior, mean, cov_matrix = build_QDF_model(num_class, x_train, y_train)
+    #print_cov_matrix(cov_matrix)
+    
     # cacualte the shared covariance matirx
     avg_cov = np.matlib.zeros(cov_matrix[0].shape)
     for i in range(num_class):
@@ -49,7 +51,8 @@ def LDF_predict(x_test, num_class, inverse_cov, weight, w0):
         max_posteriori = -float('inf')
         prediction = -1
         for i in range(num_class):
-            p = (-1 * (x.T * inverse_cov * x) + weight[:, i].T * x + w0[i])[0,0]
+            #p = (-1 * (x.T * inverse_cov * x) + weight[:, i].T * x + w0[i])[0,0]
+            p = (weight[:, i].T * x + w0[i])[0,0]
             if p > max_posteriori:
                 max_posteriori = p
                 prediction = i
@@ -66,6 +69,8 @@ def main(dataset_name):
     y_pred = LDF_predict(x_test, num_class, inverse_cov, weight, w0)
     #pdb.set_trace()
     print sklearn.metrics.classification_report(y_test, y_pred)
+    
+    print 'Average accuracy: ', sklearn.metrics.accuracy_score(y_test, y_pred)
 
 if __name__ == "__main__":
     dataset_name = sys.argv[1]

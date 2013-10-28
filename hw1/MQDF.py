@@ -57,9 +57,14 @@ def build_MQDF_model(num_class, x_train, y_train, k, delta0):
         # delta via ML estimation
         #delta[i] = (cov.trace() - sum(eigenvalue[i])) * 1.0 / (d-k)
         
-        # delta close to $\sigma_{i,k}$ or $\sigma_{i,k+1}$
+        # delta close to $\sigma_{i,k-1}$ or $\sigma_{i,k}$
+        #delta[i] = (eig_values[k-1] + eig_values[k])/2
+        #print 'Suggestd delta[%d]: %f' % (i, (eig_values[k] + eig_values[k+1])/2)
+        
+        # delta as the mean of minor values
+        delta[i] = sum(eig_values[k:]) / len(eig_values[k:])
     
-    delta = [delta0] * num_class
+    #delta = [delta0] * num_class
     return prior, mean, eigenvalue, eigenvector, delta
     
 def MQDF_predict(x_test, num_class, k, mean, eigenvalue, eigenvector, delta):
@@ -72,17 +77,18 @@ def MQDF_predict(x_test, num_class, k, mean, eigenvalue, eigenvector, delta):
         max_posteriori = -float('inf')
         prediction = -1
         for i in range(num_class):
-            dis = (x.T * mean[i])[0,0] # the Euclidean distance
+            dis = np.linalg.norm(x.reshape((d,)) - mean[i].reshape((d,))) ** 2 # 2-norm
             # Mahalanobis distance
             ma_dis = [0] * k
             for j in range(k):
-                ma_dis[j] = ((x - mean[i]).T * eigenvector[i][:, j])[0,0]
+                ma_dis[j] = (((x - mean[i]).T * eigenvector[i][:, j])[0,0])**2
             
             p = 0
             for j in range(k):
                 p += (ma_dis[j] * 1.0 / eigenvalue[i][j])
             
             p += ((dis - sum(ma_dis)) / delta[i])
+            
             for j in range(k):
                 p += math.log(eigenvalue[i][j])
                 
@@ -120,17 +126,18 @@ def main(dataset_name):
     print 'Preparing cv dataset...'
     cv_dataset = prepare_cv_dataset(x_train, y_train, nfold)
     
-    bestk = 0
+    k = num_feature / 2
+    bestk = k
     bestdelta0 = 0
     highest_prec = 0
+    
+    """
     while 1:
-        print 'Input k, delta:'
+        print 'Input delta:'
         s = raw_input().strip()
         if s == '':
             break
-        k, delta0 = s.split()
-        k = int(k)
-        delta0 = float(delta0)
+        delta0 = float(s)
         
         avg_precision = cross_validation(cv_dataset, num_class, k, delta0)
         print 'cross valiation: k=%d, delta=%f, avg precision=%f\n' % (k, delta0, avg_precision)
@@ -145,11 +152,15 @@ def main(dataset_name):
     
     k = bestk
     delta0 = bestdelta0
-    prior, mean, eigenvalue, eigenvector, delta = build_MQDF_model(num_class, x_train, y_train, k, delta0)
+    """
+    prior, mean, eigenvalue, eigenvector, delta = build_MQDF_model(num_class, x_train, y_train, k, 0)
 
     y_pred = MQDF_predict(x_test, num_class, k, mean, eigenvalue, eigenvector, delta)
+    
     #pdb.set_trace()
     print sklearn.metrics.classification_report(y_test, y_pred)
+    
+    print 'Average accuracy: ', sklearn.metrics.accuracy_score(y_test, y_pred)
 
 if __name__ == '__main__':
     import sys

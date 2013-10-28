@@ -6,6 +6,7 @@ import sklearn.metrics
 
 import readdata
 from cv import prepare_cv_dataset
+from parzenwindow import make_small_dataset
 
 def knn_predict(num_class, x_train, y_train, x_test, k):
     """
@@ -28,7 +29,7 @@ def knn_predict(num_class, x_train, y_train, x_test, k):
         # find votes
         votes = [0] * num_class
         for i in range(k):
-            index = knn_neighbor[i][1]
+            index = int(knn_neighbor[i][1])
             votes[index] = votes[index] + 1
         # find the dominating label in knn neighbor
         prediction = votes.index(max(votes))
@@ -52,6 +53,9 @@ if __name__ == '__main__':
     import sys
     dataset_name = sys.argv[1]
     num_class, num_feature, x_train, y_train, x_test, y_test = readdata.read_dataset(dataset_name)
+    
+    x_train, y_train = make_small_dataset(x_train, y_train, 500)
+    x_test, y_test = make_small_dataset(x_test, y_test, 200)
     
     print 'Number of folds:'
     nfold = int(input())
@@ -79,3 +83,5 @@ if __name__ == '__main__':
 
     y_pred = knn_predict(num_class, x_train, y_train, x_test, bestk)
     print sklearn.metrics.classification_report(y_test, y_pred)
+    
+    print 'Average accuracy: ', sklearn.metrics.accuracy_score(y_test, y_pred)
