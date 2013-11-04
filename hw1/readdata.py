@@ -23,7 +23,7 @@ def read_dataset(dataset_name):
     class_set = set()
     x_train = []
     y_train = []
-    with open('./dataset/' + dataset_name + '.train', 'rb') as f:
+    with open('/home/kqc/github/PR-homework/hw1/dataset/' + dataset_name + '.train', 'rb') as f:
         reader = csv.reader(f)
         for row in reader:
             if row == []:
@@ -34,7 +34,7 @@ def read_dataset(dataset_name):
     
     x_test = []
     y_test = []
-    with open('./dataset/' + dataset_name + '.test', 'rb') as f:
+    with open('/home/kqc/github/PR-homework/hw1/dataset/' + dataset_name + '.test', 'rb') as f:
         reader = csv.reader(f)
         for row in reader:
             if row == []:
@@ -63,7 +63,7 @@ def prepare_iris():
     class_map = {'Iris-setosa':0, 'Iris-versicolor':1, 'Iris-virginica':2}
     
     data = []
-    with open('./dataset/iris.data', 'rb') as f:
+    with open('/home/kqc/github/PR-homework/hw1/dataset/iris.data', 'rb') as f:
         reader = csv.reader(f)
         for row in reader:
             if row == []:
@@ -108,7 +108,7 @@ def prepare_letter_recognition():
     
     data = []
     labels = []
-    with open('./dataset/letter-recognition.data', 'rb') as f:
+    with open('/home/kqc/github/PR-homework/hw1/dataset/letter-recognition.data', 'rb') as f:
         reader = csv.reader(f)
         for row in reader:
             if row == []:
@@ -143,8 +143,8 @@ def prepare_letter_recognition():
 def prepare_sat():
     """ Make class distribution is 0..6, instead of 1..7
     """
-    ft = open('./dataset/sat.train1', 'w')
-    f = open('./dataset/sat.train', 'rb')
+    ft = open('/home/kqc/github/PR-homework/hw1/dataset/sat.train1', 'w')
+    f = open('/home/kqc/github/PR-homework/hw1/dataset/sat.train', 'rb')
     for line in f:
         line = line.strip()
         if line == '':
@@ -154,8 +154,8 @@ def prepare_sat():
         
     ft.close(); f.close()
     
-    ft = open('./dataset/sat.test1', 'w')
-    f = open('./dataset/sat.test', 'rb')
+    ft = open('/home/kqc/github/PR-homework/hw1/dataset/sat.test1', 'w')
+    f = open('/home/kqc/github/PR-homework/hw1/dataset/sat.test', 'rb')
     for line in f:
         line = line.strip()
         if line == '':
