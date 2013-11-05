@@ -12,7 +12,7 @@ int main(){
     assert(path!=NULL && outpath!=NULL);
     
     for(index=241; index<=300; index++){
-        sprintf (path, "/home/kqc/dataset/HWDB1.1/HWDB1.1tst/1%03d.mpf", index);
+        sprintf(path, "/home/kqc/dataset/HWDB1.1/HWDB1.1tst/%d.mpf", 1000+index);
         FILE* f = fopen(path, "rb");
         
         if(f == NULL){
@@ -32,7 +32,7 @@ int main(){
         char* illustration_text = (char*)malloc(sizeof(char) * llustr_size);
         char* code_type = (char*)malloc(sizeof(char) * 20);
         
-        assert(format_code!=NULL && illustration_text!=NULL && code_type!=NULL)
+        assert(format_code!=NULL && illustration_text!=NULL && code_type!=NULL);
         
         result = fread (format_code, 8, 1, f); // read format code
         result = fread (illustration_text, llustr_size, 1, f);
@@ -62,7 +62,7 @@ int main(){
         unsigned char* vector = (unsigned char*)malloc(sizeof(unsigned char) * dim);
         assert(label!=NULL && vector!=NULL);
             
-        sprintf(outpath, "/home/kqc/dataset/HWDB1.1/test/1%03d.txt", index);
+        sprintf(outpath, "/home/kqc/dataset/HWDB1.1/test/%d.txt", 1000+index);
         FILE* outf = fopen(outpath, "w");
         
         printf("Writing %s\n", outpath);
@@ -84,17 +84,18 @@ int main(){
         
         fclose(f);
         fclose(outf);
+        
+        free(format_code);
+        free(illustration_text);
+        free(code_type);
+        free(data_type);
+        free(label);
+        free(vector);
     }
     
     free(path);
     free(outpath);
     
-    free(format_code);
-    free(illustration_text);
-    free(code_type);
-    free(data_type);
-    free(label);
-    free(vector);
     
     //printf("Code length: %d", code_length);
     return 1;
