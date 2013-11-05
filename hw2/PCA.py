@@ -21,7 +21,7 @@ plot samples of Iris dataset in coordinates of
 (3) 2D subspace of LDA corresponding to the first two major eigenvalues.
 """
 
-def PCA(x_train):
+def PCA(x_train, d):
     """ PCA for dimension reduction
     """      
     # caculate the covariance matrix
@@ -74,7 +74,7 @@ def main(dataset_name, s):
     if s > num_feature:
         print 'The target dimension must be equal or smaller than the original dim.'
     
-    eig_values, eig_vectors = PCA(x_train)
+    eig_values, eig_vectors = PCA(x_train, num_feature)
     xt = np.matrix(x) * eig_vectors[:, :s]
     plot_subspace(xt, y, num_class)
 
