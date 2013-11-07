@@ -41,6 +41,7 @@ def build_QDF_model(num_class, x_train, y_train):
     mean = []
     cov_matrix = []
     prior = []
+    #pdb.set_trace()
     for i in range(num_class):
         data[i] = np.matrix(data[i], dtype=np.float64)
         mean.append(data[i].mean(0).T)

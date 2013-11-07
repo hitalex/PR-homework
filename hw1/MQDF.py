@@ -44,7 +44,7 @@ def build_MQDF_model(num_class, x_train, y_train, k, delta0):
     delta = [0] * num_class # deltas for each class
     for i in range(num_class):
         cov = cov_matrix[i]
-        eig_values, eig_vectors = linalg.eig(cov)
+        eig_values, eig_vectors = linalg.eigh(cov)
         # sort the eigvalues
         idx = eig_values.argsort()
         idx = idx[::-1] # reverse the array
