@@ -8,6 +8,7 @@ import pdb
 
 import numpy as np
 import scipy.linalg
+import numpy.linalg
 import matplotlib.pyplot as plt
 
 os.sys.path.append('/home/kqc/github/PR-homework/')
@@ -76,9 +77,11 @@ def FisherLDA(num_class, d, x, y):
         Sb = Sb + prior_list[i] * (mean * mean.T)
         
     St = Sw + Sb
-    # Solve generalized eigenvalue problem of a square matrix.
+    # Solve an ordinary or generalized eigenvalue problem for a complex Hermitian or real symmetric matrix.
     # Sb为实对称阵
-    w, vr = scipy.linalg.eig(Sb, Sw, left=False, right=True)
+    #w, vr = scipy.linalg.eigh(Sb, Sw)
+    w, vr = np.linalg.eig(Sw.getI() * Sb)
+    #vr = whitening_eig(Sb, Sw)
     
     # 按照特征值排序
     idx = w.argsort()
@@ -87,6 +90,22 @@ def FisherLDA(num_class, d, x, y):
     vr = vr[:,idx]
     
     return w, vr
+    
+def whitening_eig(a, b):
+    """ Find eig values and eig vectors by whitening matrix a and b: a v = w b v
+    where v are the eig vectors, and w is eig values
+    """
+    w, P = np.linalg.eigh(b)
+    A = np.diagflat(w) # diag with eig values
+    
+    W1 = P * np.sqrt(A) # scipy.linalg.sqrtm is also OK, because A is diagnal
+    S2 = W1.T * a * W1
+    
+    w, Q = np.linalg.eigh(S2)
+    
+    W = P * np.sqrt(A) * Q
+    
+    return W
             
 def main(dataset_name, s):
     
