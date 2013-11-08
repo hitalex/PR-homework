@@ -80,7 +80,6 @@ def main():
     cov = 1.0 / total * moment - mean * mean.T
     #cov = moment - mean * mean.T
     
-    class_cov = [0] * class_count
     class_prior = [0] * class_count
     Sb = np.zeros((d,d), np.float64)
     for i in range(class_count):
@@ -98,15 +97,18 @@ def main():
     # 序列化已经计算完成的对象
     print 'Dumping into file...'
     import pickle
-    f = open('matrixpickle', 'w')
-    pickle.dump([cov, Sw, Sb], f)
+    f = open('matrixpickle2', 'w')
+    pickle.dump([total, char_list, class_count, class_total, mean, cov, class_mean, class_prior, Sb], f) # version2
+    #pickle.dump([cov, Sw, Sb], f) # version 1
     f.close()
     
+    """
     print 'Saving char list...'
     f = open('charlist.txt', 'w')
     for char in char_list:
         f.write(char + '\n')
     f.close()
+    """
         
 if __name__ == '__main__':
     main()
