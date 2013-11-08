@@ -51,8 +51,8 @@ def LDF_predict(x_test, num_class, inverse_cov, weight, w0):
         max_posteriori = -float('inf')
         prediction = -1
         for i in range(num_class):
-            #p = (-1 * (x.T * inverse_cov * x) + weight[:, i].T * x + w0[i])[0,0]
-            p = (weight[:, i].T * x + w0[i])[0,0]
+            p = (-1 * (x.T * inverse_cov * x) + weight[:, i].T * x + w0[i])[0,0]
+            #p = (weight[:, i].T * x + w0[i])[0,0]
             if p > max_posteriori:
                 max_posteriori = p
                 prediction = i
