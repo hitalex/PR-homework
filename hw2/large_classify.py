@@ -138,6 +138,7 @@ def main():
         index = index + 1
     
     d = 512
+    
     dr_method = 'PCA'
     #dr_method = 'FisherLDA'
     
@@ -165,13 +166,29 @@ def main():
         W = eig_vectors[:, :s]
         
         testpath = '/home/kqc/dataset/HWDB1.1/test.txt'
-        #print 'LDF prediction:'
-        #y_true, y_pred = classify_LDF(class_count, d, class_prior, class_mean, Sw, W, testpath)
+        
+        
+        print 'LDF prediction:'
+        y_true, y_pred = classify_LDF(class_count, d, class_prior, class_mean, Sw, W, testpath)
+
+        resultpath = 'LDF-result-' + dr_method + '.txt'
+        print 'Saving to: ', resultpath
+        f = open(resultpath, 'w')
+        for i in range(len(y_true)):
+            f.write(str(y_true[i]) + ' ' + str(y_pred[i]) + '\n')
+        f.close()
         
         print 'Nearest mean prediction:'
         # hyper paramter
         delta = 1
         y_true, y_pred = classify_nearest_mean(class_count, d, class_prior, class_mean, delta, W, testpath)
+        
+        resultpath = 'nearest-mean-result-' + dr_method + '.txt'
+        print 'Saving to: ', resultpath
+        f = open(resultpath, 'w')
+        for i in range(len(y_true)):
+            f.write(str(y_true[i]) + ' ' + str(y_pred[i]) + '\n')
+        f.close()
         
         
 if __name__ == '__main__':
