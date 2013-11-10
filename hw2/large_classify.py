@@ -33,6 +33,7 @@ def classify_LDF(num_class, num_feature, class_prior, class_mean, avg_cov, W, te
     correct = 0
     tmp = np.matrix([0] * d).T
     
+    total = 0
     for line in f:
         line = line.strip()
         seg_list = line.split(',')
@@ -44,6 +45,7 @@ def classify_LDF(num_class, num_feature, class_prior, class_mean, avg_cov, W, te
         
         label = int(seg_list[-1])
         y_true.append(label)
+        total = total + 1
         
         max_posteriori = -float('inf')
         prediction = -1
@@ -59,18 +61,17 @@ def classify_LDF(num_class, num_feature, class_prior, class_mean, avg_cov, W, te
         
         if label == prediction:
             correct = correct + 1
-            print 'Correct: ', correct
+            print 'Total: %d, Correct: %d, acc: %f' % (total, correct, correct*1.0 / total)
         
     f.close()
-    total = len(y_pred)
     print 'Total: %d, Correct: %d, acc: %f' % (total, correct, correct*1.0 / total)
     
     return y_true, y_pred
     
-def classify_nearest_mean(num_class, num_feature, class_mean, W, testpath):
+def classify_nearest_mean(num_class, num_feature, class_prior, class_mean, delta, W, testpath):
     """classification using nearest mean
     """
-    Wt = W
+    Wt = W.T
     d = num_feature
     
     f = open(testpath, 'r')
@@ -78,35 +79,45 @@ def classify_nearest_mean(num_class, num_feature, class_mean, W, testpath):
     y_pred = []
     
     correct = 0
+    total = 0
+    tmpx = np.matrix([0] * d).T
+    
     for line in f:
         line = line.strip()
-        seg_list = line.split()
+        seg_list = line.split(',')
         
-        x = [0] * d
         for i in range(d):
-            x[i] = int(seg_list[i])
-        x = np.matrix(x).T
+            tmpx[i, 0] = int(seg_list[i])
+        
+        x = Wt * tmpx # transform to low dim
+        
         label = int(seg_list[-1])
         y_true.append(label)
         
-        min_dis = float('inf')
+        total = total + 1
+        
+        maxp = - float('inf')
         prediction = -1
         for i in range(num_class):
-            x = np.array(Wt * x)
-            dis = np.linalg.norm(x - class_mean[i])
+            #tmp = x - Wt * class_mean[i]
+            #tmp = sum( np.array(tmp) ** 2) * 1.0
+            tmp = np.linalg.norm(x - Wt * class_mean[i]) ** 2
+            tmp = -1.0 * tmp / delta**2 + 2 * math.log(class_prior[i])
             
-            if dis < min_dis:
-                min_dis = dis
+            if tmp > maxp:
+                maxp = tmp
                 prediction = i
             
-            y_pred.append(prediction)
+        y_pred.append(prediction)
             
-            if prediction == label:
-                correct = correct + 1
+        print 'Label: %d, prediction: %d' % (label, prediction)
+            
+        if prediction == label:
+            correct = correct + 1
+            print 'Total: %d, Correct: %d, acc: %f' % (total, correct, correct*1.0 / total)
                 
     f.close()
     
-    total = len(y_pred)
     print 'Total: %d, Correct: %d, acc: %f' % (total, correct, correct*1.0 / total)
     
     return y_true, y_pred
@@ -154,13 +165,13 @@ def main():
         W = eig_vectors[:, :s]
         
         testpath = '/home/kqc/dataset/HWDB1.1/test.txt'
-        print 'LDF prediction:'
-        y_true, y_pred = classify_LDF(class_count, d, class_prior, class_mean, Sw, W, testpath)
-        
-        return 
+        #print 'LDF prediction:'
+        #y_true, y_pred = classify_LDF(class_count, d, class_prior, class_mean, Sw, W, testpath)
         
         print 'Nearest mean prediction:'
-        y_true, y_pred = classify_nearest_mean(class_count, d, class_mean, W, testpath)
+        # hyper paramter
+        delta = 1
+        y_true, y_pred = classify_nearest_mean(class_count, d, class_prior, class_mean, delta, W, testpath)
         
         
 if __name__ == '__main__':
