@@ -1,4 +1,5 @@
 // read mpf file
+// Author: Qingchao Kong, kqingchao@gmail.com
 
 #include <stdio.h>
 #include <stdlib.h>
