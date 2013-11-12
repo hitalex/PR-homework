@@ -58,8 +58,16 @@ def QDF_predict(x_test, num_class, prior, mean, cov_matrix):
     inverse_cov = []
     log_det_cov = []
     for i in range(num_class):
-        inverse_cov.append(cov_matrix[i].getI())
         det = np.linalg.det(cov_matrix[i])
+        if det == 0:
+            d, m = cov_matrix[i].shape
+            gamma = 0.5
+            cov = cov_matrix[i] + gamma * np.eye(d) # add a regularizer
+            inverse_cov.append(cov.getI())
+            det = np.linalg.det(cov)
+        else:
+            inverse_cov.append(cov_matrix[i].getI())
+            
         log_det_cov.append(math.log(det))
         
     predicted_labels = []
