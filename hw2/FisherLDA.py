@@ -79,8 +79,12 @@ def FisherLDA(num_class, d, x, y):
     St = Sw + Sb
     # Solve an ordinary or generalized eigenvalue problem for a complex Hermitian or real symmetric matrix.
     # Sb为实对称阵
-    #w, vr = scipy.linalg.eigh(Sb, Sw)
-    w, vr = np.linalg.eig(Sw.getI() * Sb)
+    # Regularized LDA: add a regularizer to Sw
+    gamma = 1
+    Sw = Sw + gamma * numpy.eye(d)
+    w, vr = scipy.linalg.eigh(Sb, Sw)
+    #w, vr = np.linalg.eig(Sw.getI() * Sb)
+    #w, vr = np.linalg.eig(np.linalg.pinv(Sw) * Sb)
     #vr = whitening_eig(Sb, Sw)
     
     # 按照特征值排序
@@ -106,6 +110,7 @@ def whitening_eig(a, b):
     W = P * np.sqrt(A) * Q
     
     return W
+    
             
 def main(dataset_name, s):
     
