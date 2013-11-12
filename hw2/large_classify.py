@@ -171,7 +171,7 @@ def main():
         print 'LDF prediction:'
         y_true, y_pred = classify_LDF(class_count, d, class_prior, class_mean, Sw, W, testpath)
 
-        resultpath = 'LDF-result-' + dr_method + '.txt'
+        resultpath = 'LDF-result-' + dr_method + '-' + str(s) + '.txt'
         print 'Saving to: ', resultpath
         f = open(resultpath, 'w')
         for i in range(len(y_true)):
@@ -183,7 +183,7 @@ def main():
         delta = 1
         y_true, y_pred = classify_nearest_mean(class_count, d, class_prior, class_mean, delta, W, testpath)
         
-        resultpath = 'nearest-mean-result-' + dr_method + '.txt'
+        resultpath = 'nearest-mean-result-' + dr_method + '-' + str(s) + '.txt'
         print 'Saving to: ', resultpath
         f = open(resultpath, 'w')
         for i in range(len(y_true)):

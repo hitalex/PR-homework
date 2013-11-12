@@ -60,19 +60,21 @@ def main(dataset_name):
     # PCA
     #eig_values, eig_vectors = PCA(x_train, num_feature)
     #DR_method = 'PCA'
+    
     # FisherLDA
     eig_values, eig_vectors = FisherLDA(num_class, num_feature, x_train, y_train)
     DR_method = 'FisherLDA'
     
     rng = range(5, num_feature, 5)
     rng.append(1)
-    for s in [36]:
+    for s in [ 64]:
         # reduce the dimension of training set and test set
         x_train_dr = np.matrix(x_train) * eig_vectors[:, :s]
         x_test_dr = np.matrix(x_test) * eig_vectors[:, :s]
         
         x_train_dr = np.array(x_train_dr)
         x_test_dr = np.array(x_test_dr)
+        
         
         y_pred = classify_QDF(num_class, s, x_train_dr, y_train, x_test_dr)
         classifier = 'QDF'
