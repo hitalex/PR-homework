@@ -142,7 +142,7 @@ def main():
     dr_method = 'PCA'
     #dr_method = 'FisherLDA'
     
-    for s in [20]:
+    for s in range(10, 100, 10):
         print 'Dimension reduction: %d' % s
         
         St = cov
@@ -167,9 +167,10 @@ def main():
         
         testpath = '/home/kqc/dataset/HWDB1.1/test.txt'
         
-        
         print 'LDF prediction:'
         y_true, y_pred = classify_LDF(class_count, d, class_prior, class_mean, Sw, W, testpath)
+        
+        continue 
 
         resultpath = 'LDF-result-' + dr_method + '-' + str(s) + '.txt'
         print 'Saving to: ', resultpath
@@ -192,4 +193,9 @@ def main():
         
         
 if __name__ == '__main__':
+    from datetime import datetime
+    start = datetime.now()
     main()
+    end = datetime.now()
+    
+    print 'Time taken: ', end-start
