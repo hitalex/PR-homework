@@ -20,9 +20,9 @@ def get_initial_weights():
     Note: set them to small random values chosen from a zero-mean Gaussian with a standard deviation of about 0.01
     """
     weights = np.zeros((num_class, num_hidden+1)) # add biases
-    # set biases to 0
-    weights[:, 0] = 0
-    weights[:, 1:] = np.random.normal(0, 0.01, size=(num_class, num_hidden))
+    
+    weights[:, :-1] = np.random.normal(0, 0.01, size=(num_class, num_hidden))
+    weights[:, -1] = 0 # set biases to 0
     
     return weights
     
@@ -39,7 +39,8 @@ def get_hidden_layer_parameter():
     # the covariance matrix
     # assuming the features are independent
     cov = 0.5 * np.eye(num_feature)
-    means = np.random.multivariate_normal(m, cov, size=num_hidden) # shape: num_feature * num_hidden
+    means = np.random.multivariate_normal(m, cov, size=num_hidden) # shape: num_hidden * num_feature
+    means = means.T
     
     return means, sigma2
     
@@ -54,14 +55,15 @@ def get_output(means, sigma2, weights, x):
     Return: the probability of x belonging to each class, list of length num_class
     """
     u = [0] * (num_hidden+1) # the hidden layer output
-    u[0] = 1    # weight of the biase
+    u[-1] = 1    # weight of the biase
     
     for j in range(0, num_hidden):
-        u[j+1] = exp(-1 * numpy.linalg.norm(x - means[j, :])**2 / (2 * sigma2[j]))
+        u[j] = exp(-1 * numpy.linalg.norm(x - means[:, j])**2 / (2 * sigma2[j]))
         
     v = [0] * num_class
     y = [0] * num_class
     for k in range(num_class):
+        v[k] = 0
         for j in range(num_hidden+1):
             v[k] += (weights[k, j] * u[j])
         
@@ -71,6 +73,8 @@ def get_output(means, sigma2, weights, x):
     
 def update_weight(weights, target, y, u, learning_rate):
     """ Update network weights
+    Return: the updated weights and delta
+    Note: This update routine changes the original weights
     """
     delta = [0] * num_class
     for k in range(num_class):
@@ -79,17 +83,41 @@ def update_weight(weights, target, y, u, learning_rate):
             gradient = delta[k] * u[j]
             weights[k, j] -= (learning_rate * gradient)
             
-    return weights
-            
+    return delta
+
+def update_gaussian_parameter(means, sigma2, weights, x, target, output, u, delta, learning_rate):
+    """ Update Gaussian parameters using the old weights, instead of the updated weights
+    Return: the updated means and sigma2
+    """
+    # update the means
+    weights_delta_coff = [0] * num_hidden
+    
+    for j in range(num_hidden):
+        # update each mean
+        weights_delta_coff[j] = np.dot(weights[:, j], delta)
+        
+        pgradient_mean = u[j] / (2 * sigma2[j]) * (x - means[:, j]) # shape: num_feature * 1
+        gradient_mean =  weights_delta_coff[j] * pgradient_mean
+        
+        pgradient_sigma2 = u[j] / (2 * sigma2[j]) * np.linalg.norm(x-means[:, j])**2
+        gradient_sigma2 = weights_delta_coff[j] * pgradient_sigma2
+        
+        # update means and sigma together
+        means[:, j] -= (learning_rate * gradient_mean)
+        sigma2[j] -= (learning_rate * gradient_sigma2)
+
 def check_convergence(previous_weights, weights):
     """ Check if the results has converged
     """
     return False
 
-def train_RBF_simplified(learning_rate, max_iter):
-    """ Train simple RBF network: assume m_j and sigma_j^2 are known for j=1..num_hidden
+def train_RBF(learning_rate, max_iter, is_gaussian_unknown = False):
+    """ Train RBF network: assume m_j and sigma_j^2 are known for j=1..num_hidden
     max_iter: max iterations
     learning_rate: learning rate
+    is_gaussian_unknown: if True, assume means and sigma^2 are unknown; if False, assume they are known
+    
+    Note: Consider how to set learning rate for different parameters for different iterations
     """
     means, sigma2 = get_hidden_layer_parameter()
     weights = get_initial_weights()
@@ -97,7 +125,6 @@ def train_RBF_simplified(learning_rate, max_iter):
     train_count = len(x_train)
     for t in range(max_iter):
         print 'Iteration: ', t+1
-        previous_weights = np.array(weights)
         for i in range(train_count):
             x = x_train[i]
             y = y_train[i]
@@ -106,12 +133,16 @@ def train_RBF_simplified(learning_rate, max_iter):
             target[y] = 1
             # get the output given an input
             output, u = get_output(means, sigma2, weights, x)
+            previous_weights = np.array(weights) # weights befor updating
             # update weights using the gradient descent algorithm
-            weights = update_weight(weights, target, output, u, learning_rate)
+            delta = update_weight(weights, target, output, u, learning_rate)
             
-        if check_convergence(previous_weights, weights):
-            print 'Convergence criterion has been met and training is over!'
-            break
+            if is_gaussian_unknown:
+                update_gaussian_parameter(means, sigma2, previous_weights, x, target, output, u, delta, learning_rate)
+            
+            if check_convergence(previous_weights, weights):
+                print 'Convergence criterion has been met and training is over!'
+                break
             
     return weights, means, sigma2, t
             
@@ -125,7 +156,7 @@ def main():
     learning_rate = 1.0
     max_iter = 10
     # assume m_j and sigma_j^2 are known for j=1..num_hidden
-    weights, weights, means, sigma2 = train_RBF_simplified(learning_rate, max_iter)
+    weights, means, sigma2, num_iter = train_RBF(learning_rate, max_iter, True)
 
 if __name__ == '__main__':
     """ Load dataset and start to train the network
