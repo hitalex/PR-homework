@@ -9,11 +9,14 @@ import os
 import random
 import sys
 from select import select
+import time
 
 import numpy as np
 import numpy.linalg
 import numpy.random
 import ipdb
+import sklearn.metrics
+from sklearn.cluster import KMeans
 
 os.sys.path.append('/home/kqc/github/PR-homework/')
 from hw1.readdata import read_dataset
@@ -30,13 +33,14 @@ def get_initial_weight():
     
     return weight
     
-def get_hidden_layer_parameter():
+def get_hidden_layer_parameter_gaussian():
     """ Set the hidden layer prameters: mean and \sigma^2
+    Method: use Gaussian
     """
     mean = np.zeros((num_feature, num_hidden)) # shape: num_feature * num_hidden
 
     # all \sigma are the same
-    sigma2 = np.array([1000] * num_hidden)
+    sigma2 = np.array([100] * num_hidden)
     # get the mean of the whole training dataset
     m = np.mean(x_train, axis=0)
     # the covariance matrix
@@ -46,7 +50,20 @@ def get_hidden_layer_parameter():
     mean = mean.T
     
     return mean, sigma2
+
+def get_hidden_layer_parameter_kmeans():
+    """ Set the hidden layer prameters: mean and \sigma^2
+    Method: Use kmeans algorithm to find num_hidden clustering centers as means
+    """
+    #mean = np.zeros((num_feature, num_hidden)) # shape: num_feature * num_hidden
+    # all \sigma are the same
+    sigma2 = np.array([10] * num_hidden)
+    # get the mean of the whole training dataset
+    classifier = KMeans(n_clusters=num_hidden).fit(x_train)
+    mean = (classifier.cluster_centers_).T # shape: num_feature * num_hidden
     
+    return mean, sigma2
+        
 def sigmoid(x):
     """ the Sigmoid function
     x: a scala
@@ -58,10 +75,12 @@ def get_output(mean, sigma2, weight, x):
     Return: the probability of x belonging to each class, list of length num_class
     """
     u = [0] * (num_hidden+1) # the hidden layer output
+    tmp = [0] * (num_hidden+1) # the hidden layer output
     u[-1] = 1    # weight of the biase
     
     for j in range(0, num_hidden):
-        u[j] = exp(-1 * numpy.linalg.norm(x - mean[:, j])**2 / (2 * sigma2[j]))
+        tmp[j] = -1 * numpy.linalg.norm(x - mean[:, j])**2 / (2 * sigma2[j])
+        u[j] = exp(tmp[j])
         
     v = [0] * num_class
     y = [0] * num_class
@@ -114,29 +133,25 @@ def compute_gaussian_gradient(mean, sigma2, weight, x, delta, u):
         
     return gradient_mean, gradient_sigma2
 
-def classify_validation_set(mean, sigma2, weight):
-    """ Method: check the classification acc of the validation set
+def classify(mean, sigma2, weight, test_set):
+    """ classify instances using the network
     """
-    total = len(x_validation)
-    correct = 0
+    total = len(test_set)
+    y_pred = [0] * total
+    energy = 0
     for i in range(total):
-        x = x_validation[i]
-        y_true = y_validation[i]
-        
+        x = test_set[i]
         output, v, u = get_output(mean, sigma2, weight, x)
         maxp = 0
-        y_pred = -1
+        predition = -1
         for k in range(num_class):
             if output[k] > maxp:
                 maxp = output[k]
-                y_pred = k
+                prediction = k
         
-        if y_true == y_pred:
-            correct += 1
-            
-    print 'Classification report on validation set: Total=%d, Correct=%d, Acc=%f' % (total, correct, correct*1.0/total)
+        y_pred[i] = prediction
     
-    return correct*1.0/total
+    return y_pred
     
 def check_convergence(val_acc):
     """ Check if the results has converged
@@ -151,7 +166,8 @@ def train_RBF(learning_rate, max_iter, is_gaussian_unknown = False):
     
     Note: Consider how to set learning rate for different parameters for different iterations
     """
-    mean, sigma2 = get_hidden_layer_parameter()
+    #mean, sigma2 = get_hidden_layer_parameter_gaussian()
+    mean, sigma2 = get_hidden_layer_parameter_kmeans()
     weight = get_initial_weight()
     
     train_count = len(x_train)
@@ -166,6 +182,10 @@ def train_RBF(learning_rate, max_iter, is_gaussian_unknown = False):
             target[y] = 1
             # get the output given an input
             output, v, u = get_output(mean, sigma2, weight, x)
+            #print 'Class prob. output :', output
+            #print 'Output layer output:', v
+            #print 'Hidden layer output:', u
+            
             delta = get_delta(output, target)
 
             # update weight using the gradient descent algorithm
@@ -179,14 +199,22 @@ def train_RBF(learning_rate, max_iter, is_gaussian_unknown = False):
             # update weight
             weight -= (learning_rate * gradient_weight)
         
-        acc = classify_validation_set(mean, sigma2, weight)
-        val_acc[t] = acc
+        # 输出最后一次的hidden layer输出
+        #print 'Hidden layer output:', u
+        
+        y_pred = classify(mean, sigma2, weight, x_validation)
+        #print sklearn.metrics.classification_report(y_validation, y_pred)
+        
+        val_acc[t] = sklearn.metrics.accuracy_score(y_validation, y_pred)
+        print 'Acc score:', val_acc[t]
         
         if check_convergence(val_acc):
             print 'Convergence criterion has been met and training is over!'
             break
         # waiting for human intervention
         
+        print ''
+        #time.sleep(1)
             
     return mean, sigma2, weight, t
             
@@ -197,17 +225,23 @@ def main():
         hidden layer: num_hidden
         output layer: num_class
     """
-    learning_rate = 50.0
-    max_iter = 100
+    learning_rate = 100.0
+    max_iter = 1000
     # assume m_j and sigma_j^2 are known for j=1..num_hidden
-    mean, sigma2, weight, num_iter = train_RBF(learning_rate, max_iter, True)
+    mean, sigma2, weight, num_iter = train_RBF(learning_rate, max_iter, False)
     
     print 'Dumping into file...'
     f = open(dataset_name + '_RBF_pickle', 'w')
     pickle.dump([dataset_name, num_feature, num_hidden, num_class, mean, sigma2, weight, num_iter], f)
     #pickle.dump([cov, Sw, Sb], f) # version 1
     f.close()
-
+    
+    y_pred = classify(mean, sigma2, weight, x_train)
+    print 'Training acc:', sklearn.metrics.accuracy_score(y_train, y_pred)
+    
+    y_pred = classify(mean, sigma2, weight, x_test)
+    print 'Test acc:', sklearn.metrics.accuracy_score(y_test, y_pred)
+    
 if __name__ == '__main__':
     """ Load dataset and start to train the network
     """
@@ -216,7 +250,7 @@ if __name__ == '__main__':
     num_hidden = int(sys.argv[2]) # number of hidden nodes
     
     print 'Reading dataset: ', dataset_name
-    num_class, num_feature, x_train, y_train, x_test, y_test = read_dataset(dataset_name)
+    num_class, num_feature, x_train, y_train, x_test, y_test = read_dataset(dataset_name, scaled=True)
     
     # set a validation set to check convergence
     count = len(x_train) / 3
