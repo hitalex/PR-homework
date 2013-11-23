@@ -1,4 +1,4 @@
-PR-homework: Homework projects for PR lesson
+PR-homework: Homework projects for PR course
 ===========
 
 Homework projects:
