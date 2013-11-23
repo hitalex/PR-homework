@@ -16,8 +16,9 @@ Routines usually return the following infomration:
 5, test data, ndarray format
 6, test data labels
 """
-def read_dataset(dataset_name):
+def read_dataset(dataset_name, scaled=False):
     """ Read a dataset with a specified name
+    normalized: whether to normlize the dataset
     """
     print 'Reading dataset: ', dataset_name, ' ...'
     class_set = set()
@@ -46,13 +47,26 @@ def read_dataset(dataset_name):
     num_class = len(class_set)
     num_feature = len(x_train[0])
     
+    x_train = np.array(x_train, np.float64)
+    y_train = np.array(y_train, np.int)
+    x_test = np.array(x_test, np.float64)
+    y_test = np.array(y_test, np.int)
+    
+    if scaled:
+        train_count = len(x_train)
+        x_whole = np.vstack((x_train, x_test))
+        from sklearn.preprocessing import scale
+        x_whole = scale(x_whole, axis=0, with_std=True)
+        
+        x_train = x_whole[:train_count, :]
+        x_test = x_whole[train_count:, :]
+    
     print 'Number of classes           :', num_class
     print 'Number of features          :', num_feature
     print 'Number of training instance :', len(y_train)
     print 'Number of testing instance  :', len(y_test)
     
-    return num_class, num_feature, np.array(x_train, np.float64), \
-        np.array(y_train, np.int), np.array(x_test, np.float64), np.array(y_test, np.int)
+    return num_class, num_feature, x_train, y_train, x_test, y_test
     
 def prepare_iris():
     """ read iris data set
@@ -165,9 +179,68 @@ def prepare_sat():
         
     ft.close(); f.close()
     
+def prepare_heart():
+    """ 将heart的原始数据进行预处理，例如转换类别标签，处理Nominal属性
+    """
+    from random import random
+    
+    f = open('dataset/heart.dat')
+    
+    ftrain = open('dataset/heart.train', 'w')
+    ftest = open('dataset/heart.test', 'w')
+    for line in f:
+        line = line.strip()
+        seg_list = line.split(' ')
+        
+        label = int(seg_list[-1]) - 1
+        
+        # attrbute 3:
+        if float(seg_list[2]) == 1.0:
+            attr3 = '1,0,0,0'
+        elif float(seg_list[2]) == 2.0:
+            attr3 = '0,1,0,0'
+        elif float(seg_list[2]) == 3.0:
+            attr3 = '0,0,1,0'
+        else:
+            attr3 = '0,0,0,1'
+        
+        # attribute 7:
+        if float(seg_list[6]) == 0:
+            attr7 = '1,0,0'
+        elif float(seg_list[6]) == 1:
+            attr7 = '0,1,0'
+        elif float(seg_list[6]) == 2:
+            attr7 = '0,0,1'
+            
+        # attribute 13:
+        if float(seg_list[12]) == 3:
+            attr13 = '1,0,0'
+        elif float(seg_list[12]) == 6:
+            attr13 = '0,1,0'
+        elif float(seg_list[12]) == 7:
+            attr13 = '0,0,1'
+            
+        seg_list[2] = attr3
+        seg_list[6] = attr7
+        seg_list[12] = attr13
+        
+        seg_list[-1] = str(label)
+        
+        row = ','.join(seg_list)
+        
+        if random() > 1.0/3:
+            ftrain.write(row + '\n')
+        else:
+            ftest.write(row + '\n')
+            
+    f.close()
+    ftrain.close()
+    ftest.close()
+    
 if __name__ == '__main__':
     #prepare_iris()
     #prepare_letter_recognition()
     #prepare_sat()
-    import sys
-    read_dataset(sys.argv[1])
+    prepare_heart()
+    #import sys
+    #read_dataset(sys.argv[1])
