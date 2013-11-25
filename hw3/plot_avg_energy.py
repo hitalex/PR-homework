@@ -18,11 +18,13 @@ if __name__ == '__main__':
         
     colors = ['red', 'green', 'blue', 'k']
     lines = []
-    
+    texts = ['$\sigma^2=0.1$', '$\sigma^2=1$', '$\sigma^2=10$']
     plt.figure()
+    ax = plt.subplot(111)
     for i in range(len(data)):
-        p = plt.plot(data[i], ls='-', c=colors[i], hold=True)
+        p = ax.plot(data[i], ls='-', c=colors[i], label=texts[i])
         #lines.append(p)
     
     #plt.legend(lines, text)
+    ax.legend()
     plt.show()
